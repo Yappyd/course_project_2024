@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="d-flex flex-column gap-2">
+        {{ render_field(form.flights) }}
+        {{ render_field(form.models) }}
+        {{ render_field(form.planes) }}
+        {{ render_field(form.countries) }}
+        {{ render_field(form.cities) }}
+        {{ render_field(form.airports) }}
+    </div>
+</form>
+{% endblock %}

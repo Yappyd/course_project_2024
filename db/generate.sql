@@ -63,17 +63,17 @@ CREATE TABLE "flight"
 (
  	"number" TEXT NOT NULL PRIMARY KEY,
  	"plane number" TEXT NOT NULL REFERENCES "plane"("number"),
-	"arrival" TEXT NOT NULL REFERENCES "airport"("code"),
 	"departure" TEXT NOT NULL REFERENCES "airport"("code"),
-	"arrival datetime" TIMESTAMP NOT NULL,
+	"arrival" TEXT NOT NULL REFERENCES "airport"("code"),
 	"departure datetime" TIMESTAMP NOT NULL,
+	"arrival datetime" TIMESTAMP NOT NULL,
 	"status" TEXT NOT NULL,
 	"economy price" INT NOT NULL DEFAULT 0,
 	"business price" INT NOT NULL DEFAULT 0,
 	"first price" INT NOT NULL DEFAULT 0,
 	CHECK ("number" ~ '^OBL\d{1,4}$'),
 	CHECK ("economy price" >= 0 AND "business price" >= 0 AND "first price" >=0),
-	CHECK ("departure datetime" > "arrival datetime"),
+	CHECK ("arrival datetime" > "departure datetime"),
 	CHECK ("arrival" <> "departure")
 );
 
@@ -89,7 +89,7 @@ CREATE TABLE "booking"
 );
 
 CREATE TABLE "admin"
-(
-	"login" TEXT NOT NULL PRIMARY KEY,
-	"password" TEXT NOT NULL
+(	"username" TEXT NOT NULL,
+	"password" TEXT NOT NULL UNIQUE,
+	"id" SERIAL PRIMARY KEY
 );

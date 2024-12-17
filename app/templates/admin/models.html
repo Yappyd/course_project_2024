@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+
+    {{ render_field(form.name) }}
+    {{ render_field(form.economy) }}
+    {{ render_field(form.buisness) }}
+    {{ render_field(form.first) }}
+    {{ render_field(form.add) }}
+    {{ render_field(form.delete) }}
+    {{ render_field(form.change) }}
+
+    {%if not search_bool%}
+    {{ render_field(form.show_flights) }}
+    {% else %}
+    {{ render_field(form.hide_flights) }}
+    {% if plane_models|length == 0 %}
+    <p>Моделей самолетов не найдено.</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                <th >Название</th>
+                <th>Количество мест <br> эконом класса</th>
+                <th>Количество мест <br> бизнесс класса</th>
+                <th>Количество мест <br> первого класса</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model in plane_models %}
+            <tr>
+                <td>{{ model[0] }}</td>
+                <td>{{ model[1] }}</td>
+                <td>{{ model[2] }}</td>
+                <td>{{ model[3] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</form>
+{% endblock %}

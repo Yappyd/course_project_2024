@@ -1,4 +1,7 @@
 {% from 'bootstrap5/nav.html' import render_nav_item %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/form.html' import render_form %}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -8,6 +11,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     {% block styles %}
     {{ bootstrap.load_css() }}
+    <style>
+        table {
+            border-collapse: collapse;
+            /* Границы ячеек не будут дублироваться */
+            width: 95%;
+            /* Таблица займет всю ширину */
+            margin: 20px auto;
+        }
+
+        th,
+        td {
+            border: 2px solid;
+            /* Граница для ячеек */
+            padding: 5px;
+            /* Отступ внутри ячеек */
+            text-align: center;
+            /* Выравнивание текста по центру */
+        }
+
+        /* Убираем отступы по умолчанию */
+        body {
+            overflow: hidden;
+        }
+
+        /* Анимация для фона */
+        @keyframes moveBackground {
+            from {
+                background-position: 100% 0;
+                /* Начальное положение фона (справа) */
+            }
+
+            to {
+                background-position: 0 0;
+                /* Конечное положение фона (слева) */
+            }
+        }
+
+        /* Стиль для повторяющегося фона */
+        .repeating-background {
+            width: 1000%;
+            /* Ширина на всю страницу */
+            height: 195px;
+            /* Высота области фона */
+            background-image: url('/static/img/shapka.jpg');
+            /* Путь к изображению */
+            background-repeat: repeat;
+            /* Повтор изображения */
+            background-size: auto;
+            /* Оригинальный размер изображения */
+            background-position: 100% 0;
+            /* Начальная позиция фона */
+            animation: moveBackground 800s linear infinite;
+            /* Применение анимации */
+        }
+    </style>
     {% endblock %}
     {% if title %}
     <title>{{ title }}</title>
@@ -17,17 +75,33 @@
 </head>
 
 <body>
+    <!-- Анимированный фон сверху страницы -->
+    <div class="repeating-background"></div>
+
+    <!-- Навигация -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
-            <div class="navbar-nav">
+            <div class="navbar-nav d-flex flex-row gap-3">
+                {{re}}
                 {{ render_nav_item('index', 'Главная') }}
+                {% if current_user.is_authenticated %}
+                {{ render_nav_item('admin', 'Панель админа') }}
+                {{ render_nav_item('logout', 'Выйти') }}
+                {% else %}
+                {{ render_nav_item('login', 'Логин') }}
+                {% endif %}
+
             </div>
         </div>
     </nav>
     {% block content %}{% endblock %}
+
     {% block scripts %}
     {{ bootstrap.load_js() }}
     {% endblock %}
+    <div style="padding-top: 10px">
+        {{ render_messages() }}
+    </div>
 </body>
 
 </html>

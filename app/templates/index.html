@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/form.html' import render_form %}
 
 {% block content %}
 <h2>{{ title }}</h2>
+{{ form.hidden_tag() }}
+{% if current_user.is_authenticated %}
+<p>Добро пожаловать, {{ current_user.username }}!</p>
+{% else %}
+<p>Вы не вошли в систему.</p>
+{% endif %}
 {{ render_form(form, method="POST", action="") }}
 {%if search_bool%}
 {% if flights|length == 0 %}
@@ -11,7 +16,6 @@
 <table>
     <thead>
         <tr>
-            <th>№</th>
             <th>Рейс</th>
             <th>Самолет</th>
             <th>Место вылета</th>
@@ -27,7 +31,6 @@
     <tbody>
         {% for flight in flights %}
         <tr>
-            <td>{{ loop.index }}</td>
             <td>{{ flight[0] }}</td>
             <td>{{ flight[1] }}</td>
             <td>{{ flight[2] }}</td>
