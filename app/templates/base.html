@@ -32,7 +32,7 @@
 
         /* Убираем отступы по умолчанию */
         body {
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         /* Анимация для фона */
@@ -94,13 +94,16 @@
             </div>
         </div>
     </nav>
-    {% block content %}{% endblock %}
 
+    {% block content %}{% endblock %}
+    {% block messages %}
+    <div style="padding-top: 10px">
+        {{ render_messages() }}
+    {% endblock %}
     {% block scripts %}
     {{ bootstrap.load_js() }}
     {% endblock %}
-    <div style="padding-top: 10px">
-        {{ render_messages() }}
+
     </div>
 </body>
 

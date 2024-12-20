@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+
+    {{ render_field(form.code) }}
+    {{ render_field(form.name) }}
+    {{ render_field(form.city) }}
+    {{ render_field(form.add) }}
+    {{ render_field(form.delete) }}
+
+    {%if not search_bool%}
+    {{ render_field(form.show_airports) }}
+    {% else %}
+    {{ render_field(form.hide_airports) }}
+    {% if airports|length == 0 %}
+    <p>Городов в базе не найдено.</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                <th >Код</th>
+                <th>Аэропорт</th>
+                <th>Страна</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for airport in airports %}
+            <tr>
+                <td>{{ airport[0] }}</td>
+                <td>{{ airport[1] }}</td>
+                <td>{{ airport[2] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</form>
+{% endblock %}

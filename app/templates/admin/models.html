@@ -11,12 +11,11 @@
     {{ render_field(form.first) }}
     {{ render_field(form.add) }}
     {{ render_field(form.delete) }}
-    {{ render_field(form.change) }}
 
     {%if not search_bool%}
-    {{ render_field(form.show_flights) }}
+    {{ render_field(form.show_models) }}
     {% else %}
-    {{ render_field(form.hide_flights) }}
+    {{ render_field(form.hide_models) }}
     {% if plane_models|length == 0 %}
     <p>Моделей самолетов не найдено.</p>
     {% else %}

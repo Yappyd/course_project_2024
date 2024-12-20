@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+
+    {{ render_field(form.name) }}
+    {{ render_field(form.visa) }}
+    {{ render_field(form.add) }}
+    {{ render_field(form.delete) }}
+
+    {%if not search_bool%}
+    {{ render_field(form.show_countries) }}
+    {% else %}
+    {{ render_field(form.hide_countries) }}
+    {% if countries|length == 0 %}
+    <p>Стран в базе не найдено.</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                <th >Название</th>
+                <th>Необходимость визы</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for country in countries %}
+            <tr>
+                <td>{{ country[0] }}</td>
+                <td>{{ country[1] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</form>
+{% endblock %}

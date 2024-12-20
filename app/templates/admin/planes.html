@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+
+    {{ render_field(form.number) }}
+    {{ render_field(form.model) }}
+    {{ render_field(form.add) }}
+    {{ render_field(form.delete) }}
+
+    {%if not search_bool%}
+    {{ render_field(form.show_planes) }}
+    {% else %}
+    {{ render_field(form.hide_planes) }}
+    {% if planes|length == 0 %}
+    <p>Самолетов в парке не найдено.</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                <th >Номер</th>
+                <th>Модель</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model in planes %}
+            <tr>
+                <td>{{ model[0] }}</td>
+                <td>{{ model[1] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</form>
+{% endblock %}

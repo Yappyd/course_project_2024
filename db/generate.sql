@@ -67,14 +67,15 @@ CREATE TABLE "flight"
 	"arrival" TEXT NOT NULL REFERENCES "airport"("code"),
 	"departure datetime" TIMESTAMP NOT NULL,
 	"arrival datetime" TIMESTAMP NOT NULL,
-	"status" TEXT NOT NULL,
+	"status" INT NOT NULL,
 	"economy price" INT NOT NULL DEFAULT 0,
 	"business price" INT NOT NULL DEFAULT 0,
 	"first price" INT NOT NULL DEFAULT 0,
 	CHECK ("number" ~ '^OBL\d{1,4}$'),
 	CHECK ("economy price" >= 0 AND "business price" >= 0 AND "first price" >=0),
 	CHECK ("arrival datetime" > "departure datetime"),
-	CHECK ("arrival" <> "departure")
+	CHECK ("arrival" <> "departure"),
+	CHECK ("status" BETWEEN 0 AND 4)
 );
 
 CREATE TABLE "booking"
