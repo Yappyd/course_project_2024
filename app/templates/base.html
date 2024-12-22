@@ -84,11 +84,15 @@
             <div class="navbar-nav d-flex flex-row gap-3">
                 {{re}}
                 {{ render_nav_item('index', 'Главная') }}
-                {% if current_user.is_authenticated %}
+                {% if current_user.is_authenticated and current_user.role == 0 %}
                 {{ render_nav_item('admin', 'Панель админа') }}
                 {{ render_nav_item('logout', 'Выйти') }}
+                {% elif current_user.is_authenticated and current_user.role == 1 %}
+                {{ render_nav_item('account', 'Личный кабинет') }}
+                {{ render_nav_item('logout', 'Выйти') }}
                 {% else %}
-                {{ render_nav_item('login', 'Логин') }}
+                {{ render_nav_item('login', 'Вход') }}
+                {{ render_nav_item('registration', 'Регистрация') }}
                 {% endif %}
 
             </div>

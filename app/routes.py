@@ -1,11 +1,12 @@
 import psycopg, re
-from werkzeug.security import check_password_hash
-from flask import render_template, redirect, flash, url_for
-from flask_login import login_user, current_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import render_template, redirect, flash, url_for, abort
+from flask_login import login_user, current_user, logout_user, login_required
 from app import app
 from app.forms import *
 from app.user import User
 from datetime import datetime, date, time, timedelta
+from dateutil.relativedelta import relativedelta
 
 # Стартовая станица
 @app.route('/', methods=['GET', 'POST'])
@@ -27,34 +28,42 @@ def index():
     return render_template('index.html', title='Главная', form = get_flights_form, search_bool = False)
 
 # Авторизация админа
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    login_form = LoginForm()
+@app.route('/admin/login', methods=['GET', 'POST'])
+def adminLogin():
+    if current_user.is_authenticated:
+        abort(403)
+    login_form = loginForm()
     if login_form.validate_on_submit():
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             res = cur.execute('SELECT id, username, password '
                               'FROM public."admin" '
                               'WHERE username = %s', (login_form.username.data,)).fetchone()
-        if res is None or res[2] != login_form.password.data:
+        if res is None or not check_password_hash(res[2], login_form.password.data):
             flash('Попытка входа неудачна', 'danger')
-            return redirect(url_for('login'))
+            return redirect(url_for('adminLogin'))
         id, username, password = res
-        user = User(id, username, password)
+        user = User(id, username, password, 0)
         login_user(user, remember=login_form.remember_me.data)
         flash(f'Вы успешно вошли в систему, {current_user.username}', 'success')
         return redirect(url_for('index'))
-    return render_template('login.html', title='Вход', form=login_form)
+    return render_template('user/login_registration.html', title='Авторизация админа', form=login_form)
 
 # Выход
+@login_required
 @app.route('/logout')
 def logout():
+    if not current_user.is_authenticated:
+        abort(403)
     logout_user()
     return redirect(url_for('index'))
 
 # Интерфейс админа
+@login_required
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     interface = adminInterface()
     if interface.models.data:
         return redirect(url_for('models'))
@@ -71,8 +80,11 @@ def admin():
     return render_template('admin/interface.html', title='Панель админа', form=interface)
 
 # Добавление моделей самолетов
+@login_required
 @app.route('/admin/models', methods=['GET', 'POST'])
 def models():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     model_form = adminModels()
     # Показать модели
     if model_form.show_models.data:
@@ -121,8 +133,11 @@ def models():
     return render_template('admin/models.html', title='Редактирование моделей самолета', form=model_form, search_bool = False)
 
 # Добавление самолетов в парк
+@login_required
 @app.route('/admin/planes', methods=['GET', 'POST'])
 def planes():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     plane_form = adminPlanes()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
@@ -174,8 +189,11 @@ def planes():
     return render_template('admin/planes.html', title='Редактирование самолетов в парке', form=plane_form, search_bool = False)
 
 # Добавление стран в базу
+@login_required
 @app.route('/admin/countries', methods=['GET', 'POST'])
 def countries():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     country_form = adminСountries()
     # Показать страны
     if country_form.show_countries.data:
@@ -221,8 +239,11 @@ def countries():
     return render_template('admin/countries.html', title='Редактирование стран в базе', form=country_form, search_bool = False)
 
 # Добавление городов в базу
+@login_required
 @app.route('/admin/cities', methods=['GET', 'POST'])
 def cities():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     city_form = adminСities()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
@@ -271,9 +292,11 @@ def cities():
                     flash('Такого города нет в базе!', 'danger')
     return render_template('admin/cities.html', title='Редактирование городов в базе', form=city_form, search_bool = False)
 
-
+# Добавление аэропортов в базу
 @app.route('/admin/airports', methods=['GET', 'POST'])
 def airports():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     airport_form = adminAirports()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
@@ -329,8 +352,11 @@ def airports():
     return render_template('admin/airports.html', title='Редактирование аэропортов в базе', form=airport_form, search_bool = False)
 
 # Добавление рейсов
+@login_required
 @app.route('/admin/flights', methods=['GET', 'POST'])
 def flights():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
     flight_form = adminFlights()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
@@ -513,3 +539,89 @@ def flights():
                                 except Exception:
                                     flash('Невозможно изменить рейс', 'danger')
     return render_template('admin/flights.html', title='Редактирование рейсов', form=flight_form, search_bool = False)
+
+@app.route('/registration', methods=['GET', 'POST'])
+def registration():
+    if current_user.is_authenticated:
+        abort(403)
+    registration_form = registrationForm()
+    if registration_form.submit.data:
+        if registration_form.password.data != registration_form.confirm.data:
+            flash ('Пароли не совпадают!', 'danger')
+        elif registration_form.birthdate.data > date.today()-relativedelta(years=12):
+            flash ('Зарегистрироваться могут только пользователи старше 12 лет!', 'danger')
+        else:
+            with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+                cur = con.cursor()
+                user = cur.execute('SELECT * FROM public."user" WHERE "login" = %s', (registration_form.login.data,)).fetchone()
+                if user:
+                    flash ('Пользователь с таким именем уже есть!', 'danger')
+                else:
+                    password_hash = generate_password_hash(registration_form.password.data)
+                    cur.execute('INSERT INTO "user" VALUES (%s, %s, %s)', (registration_form.login.data,password_hash, registration_form.birthdate.data))
+                    flash(f'Вы успешно зарегистрированы, {registration_form.login.data}', 'success')
+                    return redirect(url_for('login'))
+    return render_template('user/login_registration.html', title='Регистрация', form=registration_form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        abort(403)
+    login_form = loginForm()
+    if login_form.validate_on_submit():
+        with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+            cur = con.cursor()
+            res = cur.execute('SELECT id, login, password '
+                              'FROM public."user" '
+                              'WHERE login = %s', (login_form.username.data,)).fetchone()
+        if res is None or not check_password_hash(res[2], login_form.password.data):
+            flash('Попытка входа неудачна', 'danger')
+            return redirect(url_for('login'))
+        id, username, password = res
+        user = User(id, username, password, 1)
+        login_user(user, remember=login_form.remember_me.data)
+        flash(f'Вы успешно вошли в систему, {current_user.username}', 'success')
+        return redirect(url_for('index'))
+    return render_template('user/login_registration.html', title='Авторизация', form=login_form)
+
+@app.route('/account', methods=['GET', 'POST'])
+def account():
+    account_form=accountForm()
+    if not current_user.is_authenticated or current_user.role != 1:
+        abort(403)
+    if account_form.changeData.data:
+        return redirect(url_for('accountChange'))
+    return render_template('user/account.html', title='Личный кабинет', form=account_form)
+
+@app.route('/account/change', methods=['GET', 'POST'])
+def accountChange():
+    accountChange_form=accountChangeForm()
+    if not current_user.is_authenticated or current_user.role != 1:
+        abort(403)
+    with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+        cur = con.cursor()
+        res = cur.execute('SELECT * FROM public."user" WHERE id = %s', (current_user.id,)).fetchone()
+        accountChange_form.login.data = res[0]
+        accountChange_form.birthdate.data = res[2]
+        accountChange_form.surname.data = res[3]
+        accountChange_form.name.data = res[4]
+        accountChange_form.patronymic.data = res[5]
+        accountChange_form.email.data = res[6]
+        accountChange_form.phone.data = res[7]
+    if accountChange_form.submit.data:
+        pas_bool = False
+        birthdate = res[3]
+        if accountChange_form.password.data or accountChange_form.confirm.data:
+            if len(accountChange_form.password.data) < 3 or len(accountChange_form.submit.data) < 3:
+                flash('Пароль должен состоять минимум из 3 символов!', 'danger')
+            elif accountChange_form.password.data != accountChange_form.submit.data: 
+                flash('Пароли не совпадают!', 'danger')
+            else:
+                pas_bool = True
+        
+        if accountChange_form.birthdate.data > date.today()-relativedelta(years=12):
+            flash ('Зарегистрированными могут быть только пользователи старше 12 лет!', 'danger')
+        else:
+            birthdate = accountChange_form.birthdate.data
+        
+    return render_template('user/account_change.html', title='Изменение данных', form=accountChange_form)

@@ -8,7 +8,7 @@ class flight_search(FlaskForm):
     date = DateField('Дата вылета', format='%Y-%m-%d', validators=[Optional()])
     submit = SubmitField('Показать рейсы')
 
-class LoginForm(FlaskForm):
+class loginForm(FlaskForm):
     username = StringField('Логин', [validators.InputRequired()], render_kw={"autocomplete": "off"})
     password = PasswordField('Пароль', [validators.InputRequired()])
     remember_me = BooleanField('Запомнить меня')
@@ -89,3 +89,25 @@ class adminFlights(FlaskForm):
     check_status = BooleanField('Учитывать статус')
     show_flights = SubmitField('Показать рейсы')
     hide_flights = SubmitField('Скрыть рейсы')
+
+class registrationForm(FlaskForm):
+    login = StringField('Имя пользователя', validators=[validators.Length(min=3, max=25)], render_kw={"autocomplete": "off"})
+    password = PasswordField('Пароль', validators=[ validators.Length(min=3, max=100)])
+    confirm  = PasswordField('Повторите пароль', validators=[ validators.Length(min=3, max=100)], render_kw={"autocomplete": "off"})
+    birthdate = DateField('Дата рождения', format='%Y-%m-%d', validators=[validators.InputRequired()])
+    submit = SubmitField('Зарегистрироваться')
+
+class accountForm(FlaskForm):
+    changeData = SubmitField('Изменение данных аккаунта')
+
+class accountChangeForm(FlaskForm):
+    login = StringField('Имя пользователя', validators=[validators.Length(min=3, max=25),validators.InputRequired()], render_kw={"autocomplete": "off"})
+    password = PasswordField('Пароль', validators=[Optional(), validators.Length(min=3, max=100)])
+    confirm  = PasswordField('Повторите пароль', validators=[Optional(), validators.Length(min=3, max=100)], render_kw={"autocomplete": "off"})
+    birthdate = DateField('Дата рождения', format='%Y-%m-%d', validators=[validators.InputRequired()])
+    surname = StringField('Фамилия', validators=[Optional()], render_kw={"autocomplete": "off"})
+    name = StringField('Имя', validators=[Optional()], render_kw={"autocomplete": "off"})
+    patronymic = StringField('Отчество', validators=[Optional()], render_kw={"autocomplete": "off"})
+    email = StringField('E-mail', [Optional(), validators.Email()])
+    phone = StringField('Телефон', validators=[Optional(), validators.Length(11)], render_kw={"autocomplete": "off"})
+    submit = SubmitField('Изменить данные')
