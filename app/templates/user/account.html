@@ -2,6 +2,86 @@
 {% from 'bootstrap5/form.html' import render_form %}
 
 {% block content %}
+<form method="POST">
 <h2>{{ title }}</h2>
-{{ render_form(form, method="POST", action="") }}
+{{ render_field(form.money) }}
+{{ render_field(form.change_money) }}
+{{ render_field(form.change_data) }}
+<h4>Информация о бронированиях</h4>
+{% if bookings|length == 0 %}
+<p>Бронирований не найдено</p>
+{% else %}
+<div>
+    <table>
+        <thead>
+            <tr>
+                <th>Номер рейса</th>
+                <th>Самолет</th>
+                <th>Место вылета</th>
+                <th>Место прилета</th>
+                <th>Дата и время вылета</th>
+                <th>Дата и время прилета</th>
+                <th>Статус рейса</th>
+                <th>Нужна виза?</th>
+                <th>Класс</th>
+                <th>Статус</th>
+                <th>Выбрать бронь</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking[0] }}</td>
+                <td>{{ booking[2] }} <br>({{ booking[1] }})</td>
+                <td>{{ booking[3] }} <br>{{ booking[4] }} <br>({{ booking[5] }})</td>
+                <td>{{ booking[6] }} <br>{{ booking[7] }} <br>({{ booking[8] }})</td>
+                <td>{{ booking[9] }}</td>
+                <td>{{ booking[10] }}</td>
+                {%if booking[14] == 0 %}
+                <td>Запланирован</td>
+                {% endif %}
+                {% if booking[14] == 1 %}
+                <td>В полете</td>
+                {% endif %}
+                {% if booking[14] == 2 %}
+                <td>Перенесен</td>
+                {% endif %}
+                {% if booking[14] == 3 %}
+                <td>Отменен</td>
+                {% endif %}
+                {% if booking[14] == 4 %}
+                <td>Выполнен</td>
+                {% endif %}
+                {% if booking[11] %}
+                <td>Да</td>
+                {% else %}
+                <td>Нет</td>
+                {% endif %}
+                {%if booking[12] == 0 %}
+                <td>Эконом</td>
+                {% endif %}
+                {% if booking[12] == 1 %}
+                <td>Бизнес</td>
+                {% endif %}
+                {% if booking[12] == 2 %}
+                <td>Первый</td>
+                {% endif %}
+                {% if booking[13] %}
+                <td>Оплачено</td>
+                {% else %}
+                <td>Не оплачено</td>
+                {% endif %}
+                <td>
+                    <input type="radio" name="booking_choice" value="{{ booking[0] }}" {% if loop.index==1 %}
+                        checked{%endif %}>
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{{ render_field(form.change_booking) }}
+{% endif %}
+</form>
 {% endblock %}

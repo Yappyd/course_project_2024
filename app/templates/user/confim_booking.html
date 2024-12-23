@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+<form method="POST">
+<h2>{{ title }}</h2>
+<h4>Данные рейса</h4>
+{% if first[14]%}
+<h5 style="color: red;">Внимание, нужна виза</h5>
+{% endif %}
+
+<div>
+    <table>
+        <thead>
+            <tr>
+                <th>Номер рейса</th>
+                <th>Самолет</th>
+                <th>Место вылета</th>
+                <th>Место прилета</th>
+                <th>Дата и время вылета</th>
+                <th>Дата и время прилета</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ first[0] }}</td>
+                <td>{{ first[2] }} <br>({{ first[1] }})</td>
+                <td>{{ first[3] }} <br>{{ first[4] }} <br>({{ first[5] }})</td>
+                <td>{{ first[6] }} <br>{{ first[7] }} <br>({{ first[8] }})</td>
+                <td>{{ first[9] }}</td>
+                <td>{{ first[10] }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<h5>Выберите класс</h5>
+<div>
+    <table>
+        <thead>
+            <tr>
+                {% if first[11] != 0 %}
+                <th>Эконом класс</th>
+                {% endif %}
+                {% if first[12] != 0 %}
+                <th>Бизнес класс</th>
+                {% endif %}
+                {% if first[13] != 0 %}
+                <th>Первый класс</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% if first[11] != 0 %}
+                <td>{{ first[11] }}</td>
+                {% endif %}
+                {% if first[12] != 0 %}
+                <td>{{ first[12] }}</td>
+                {% endif %}
+                {% if first[13] != 0 %}
+                <td>{{ first[13] }}</td>
+                {% endif %}
+            </tr>
+            <tr>
+                {% if first[11] != 0 %}
+                <td>
+                    <input type="radio" name="first_choice" value=0 checked>
+                </td>
+                {% endif %}
+                {% if first[12] != 0 %}
+                <td>
+                    <input type="radio" name="first_choice" value=1 checked>
+                </td>
+                {% endif %}
+                {% if first[13] != 0 %}
+                <td>
+                    <input type="radio" name="first_choice" value=2 checked>
+                </td>
+                {% endif %}
+            </tr>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% if ret_bool == 'True' %}
+<h4>Данные обратного рейса</h4>
+<div>
+    <table>
+        <thead>
+            <tr>
+                <th>Номер рейса</th>
+                <th>Самолет</th>
+                <th>Место вылета</th>
+                <th>Место прилета</th>
+                <th>Дата и время вылета</th>
+                <th>Дата и время прилета</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ second[0] }}</td>
+                <td>{{ second[2] }} <br>({{ second[1] }})</td>
+                <td>{{ second[3] }} <br>{{ second[4] }} <br>({{ second[5] }})</td>
+                <td>{{ second[6] }} <br>{{ second[7] }} <br>({{ second[8] }})</td>
+                <td>{{ second[9] }}</td>
+                <td>{{ second[10] }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<h5>Выберите класс</h5>
+<div>
+    <table>
+        <thead>
+            <tr>
+                {% if second[11] != 0 %}
+                <th>Эконом класс</th>
+                {% endif %}
+                {% if second[12] != 0 %}
+                <th>Бизнес класс</th>
+                {% endif %}
+                {% if second[13] != 0 %}
+                <th>Первый класс</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% if second[11] != 0 %}
+                <td>{{ second[11] }}</td>
+                {% endif %}
+                {% if second[12] != 0 %}
+                <td>{{ second[12] }}</td>
+                {% endif %}
+                {% if second[13] != 0 %}
+                <td>{{ second[13] }}</td>
+                {% endif %}
+            </tr>
+            <tr>
+                {% if second[11] != 0 %}
+                <td>
+                    <input type="radio" name="second_choice" value=0 checked>
+                </td>
+                {% endif %}
+                {% if second[12] != 0 %}
+                <td>
+                    <input type="radio" name="second_choice" value=1 checked>
+                </td>
+                {% endif %}
+                {% if second[13] != 0 %}
+                <td>
+                    <input type="radio" name="second_choice" value=2 checked>
+                </td>
+                {% endif %}
+            </tr>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% if mes %}
+<h5>Внимание, так как до отправления осталось менее 7 дней необходимо оплатить всю сумму сразу</h5>
+{% endif %}
+{{ render_form(form, method="POST", action="") }}
+</form>
+{% endblock %}

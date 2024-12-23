@@ -1,56 +1,197 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>{{ title }}</h2>
-{{ form.hidden_tag() }}
-{% if current_user.is_authenticated %}
-<p>Добро пожаловать, {{ current_user.username }}!</p>
-{% else %}
-<p>Вы не вошли в систему.</p>
-{% endif %}
-{{ render_form(form, method="POST", action="") }}
-{%if search_bool%}
-{% if flights|length == 0 %}
-<p>Рейсов не найдено.</p>
-{% else %}
-<table>
-    <thead>
-        <tr>
-            <th>Рейс</th>
-            <th>Самолет</th>
-            <th>Место вылета</th>
-            <th>Место прилета</th>
-            <th>Дата и время вылета</th>
-            <th>Дата и время прилета</th>
-            <th>Статус</th>
-            <th>Цена эконом класса</th>
-            <th>Цена бизнес класса</th>
-            <th>Цена первого класса</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for flight in flights %}
-        <tr>
-            <td>{{ flight[0] }}</td>
-            <td>{{ flight[1] }}</td>
-            <td>{{ flight[2] }}</td>
-            <td>{{ flight[3] }}</td>
-            <td>{{ flight[4] }}</td>
-            <td>{{ flight[5] }}</td>
-            <td>{{ flight[6] }}</td>
-            {%if flight[7] != 0 %}
-            <td>{{ flight[7] }}</td>
-            {% endif %}
-            {%if flight[8] != 0 %}
-            <td>{{ flight[8] }}</td>
-            {% endif %}
-            {%if flight[9] != 0 %}
-            <td>{{ flight[9] }}</td>
-            {% endif %}
-        </tr>
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+    {% if current_user.is_authenticated %}
+    <p>Добро пожаловать, {{ current_user.username }}!</p>
+    {% else %}
+    <p>Вы не вошли в систему.</p>
+    {% endif %}
+    {{ render_field(form.departure) }}
+    {{ render_field(form.arrival) }}
+    {{ render_field(form.date) }}
+    {{ render_field(form.ret_ticket) }}
+    <div id="second-date-wrapper">{{ render_field(form.second_date) }}</div>
+    <div style="margin-bottom: 20px;">
+        {% for subfield in form.choice %}
+        <div>
+            {{ subfield }}
+            {{ subfield.label.text }}
+        </div>
         {% endfor %}
-    </tbody>
-</table>
-{% endif %}
-{% endif %}
+    </div>
+    {{ render_field(form.submit) }}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Получаем элементы формы
+            const retTicketCheckbox = document.getElementById("show-date-checkbox");
+            const secondDateWrapper = document.getElementById("second-date-wrapper");
+            const secondDateInput = document.getElementById("name-input");
+
+            if (retTicketCheckbox && secondDateWrapper && secondDateInput) {
+                // Обновляем видимость при изменении чекбокса
+                retTicketCheckbox.addEventListener("change", function () {
+                    if (retTicketCheckbox.checked) {
+                        secondDateWrapper.style.display = "block";
+                        secondDateInput.removeAttribute("disabled"); // Включаем поле
+                    } else {
+                        secondDateWrapper.style.display = "none";
+                        secondDateInput.setAttribute("disabled", "disabled"); // Отключаем поле
+                    }
+                });
+
+                // Устанавливаем начальное состояние
+                if (retTicketCheckbox.checked) {
+                    secondDateWrapper.style.display = "block";
+                    secondDateInput.removeAttribute("disabled");
+                } else {
+                    secondDateWrapper.style.display = "none";
+                    secondDateInput.setAttribute("disabled", "disabled");
+                }
+            }
+        });
+    </script>
+
+    {%if search_bool%}
+    <h4>Список рейсов</h4>
+    {% if flights|length == 0 %}
+    <p>Рейсов не найдено.</p>
+    {% else %}
+    {% if flights[0][18]%}
+    <h5 style="color: red;">Внимание, нужна виза</h5>
+    {% endif %}
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Самолет</th>
+                    <th>Место вылета</th>
+                    <th>Место прилета</th>
+                    <th>Дата и время вылета</th>
+                    <th>Дата и время прилета</th>
+                    <th>Статус</th>
+                    <th>Цена эконом класса</th>
+                    <th>Цена бизнес класса</th>
+                    <th>Цена первого класса</th>
+                    <th>Выберите рейс</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in flights %}
+                <tr>
+                    <td>{{ flight[0] }}</td>
+                    <td>{{ flight[1] }} <br> ({{ flight[10] }})</td>
+                    <td>{{ flight[12] }}<br>{{ flight[11] }}<br>({{ flight[2] }})</td>
+                    <td>{{ flight[3] }}</td>
+                    <td>{{ flight[4] }}</td>
+                    <td>{{ flight[5] }}</td>
+                    <td> {% if flight[6] == 0 %}
+                        Запланирован
+                        {% elif flight[6] == 2 %}
+                        Перенесен
+                        {% else %}
+                        {{ flight[6] }}
+                        {% endif %}</td>
+                    {%if flight[7] != 0 and flight[15] != 0 %}
+                    <td>{{ flight[7] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    {%if flight[8] != 0 and flight[16] != 0 %}
+                    <td>{{ flight[8] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    {%if flight[9] != 0 and flight[17] != 0 %}
+                    <td>{{ flight[9] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    <!-- Добавляем радиокнопку с номером рейса -->
+                    <td>
+                        <input type="radio" name="flight_choice" value="{{ flight[0] }}" {% if loop.index==1 %}
+                            checked{%endif %}>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {%if ret%}
+    <h4>Список обратных рейсов</h4>
+    {% if second_flights|length == 0 %}
+    <p>Рейсов не найдено.</p>
+    {% else %}
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Самолет</th>
+                    <th>Место вылета</th>
+                    <th>Место прилета</th>
+                    <th>Дата и время вылета</th>
+                    <th>Дата и время прилета</th>
+                    <th>Статус</th>
+                    <th>Цена эконом класса</th>
+                    <th>Цена бизнес класса</th>
+                    <th>Цена первого класса</th>
+                    <th>Выберите рейс</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for second_flight in second_flights %}
+                <tr>
+                    <td>{{ second_flight[0] }}</td>
+                    <td>{{ second_flight[1]}} <br> ({{ second_flight[10] }})</td>
+                    <td>{{ second_flight[12] }}<br>{{ second_flight[11] }}<br>({{ second_flight[2] }})</td>
+                    <td>{{ second_flight[3] }}</td>
+                    <td>{{ second_flight[4] }}</td>
+                    <td>{{ second_flight[5] }}</td>
+                    <td> {% if second_flight[6] == 0 %}
+                        Запланирован
+                        {% elif second_flight[6] == 2 %}
+                        Перенесен
+                        {% else %}
+                        {{ flight[6] }}
+                        {% endif %}</td>
+                    {%if second_flight[7] != 0 and second_flight[15] != 0 %}
+                    <td>{{ second_flight[7] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    {%if second_flight[8] != 0 and second_flight[16] != 0 %}
+                    <td>{{ second_flight[8] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    {%if second_flight[9] != 0 and second_flight[17] != 0 %}
+                    <td>{{ second_flight[9] }}</td>
+                    {% else %}
+                    <td>Места отсутствуют</td>
+                    {% endif %}
+                    <!-- Добавляем радиокнопку с номером рейса -->
+                    <td>
+                        <input type="radio" name="second_flight_choice" value="{{ second_flight[0] }}" {% if
+                            loop.index==1 %} checked{%endif %}>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% if flights|length != 0 or (ret and second_flights|length != 0)%}
+    {{ render_field(form.book) }}
+    {%endif%}
+    {% endif %}
+    {% endif %}
+</form>
 {% endblock %}

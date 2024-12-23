@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 {% from 'bootstrap5/form.html' import render_form %}
-
 {% block content %}
 <h2>{{ title }}</h2>
 {{ render_form(form, method="POST", action="") }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Находим поле телефона
+        var phoneInput = document.getElementById("phone-input");
+
+        // Применяем маску
+        Inputmask({
+            mask: "+7 (999) 999-99-99",     // Формат маски
+            placeholder: "_",               // Символ заполнения
+            showMaskOnHover: true,         // Оставлять маску при наведении
+            showMaskOnFocus: true,          // Показывать маску при фокусе
+            clearMaskOnLostFocus: false     // Оставлять маску при потере фокуса
+        }).mask(phoneInput);
+    });
+</script>
 {% endblock %}

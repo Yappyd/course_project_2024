@@ -11,6 +11,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     {% block styles %}
     {{ bootstrap.load_css() }}
+
+    <style>
+        /* Меняем цвет радиокнопки на синий */
+        input[type="radio"] {
+            accent-color: #007bff;
+            /* Устанавливаем синий цвет */
+        }
+    </style>
+
     <style>
         table {
             border-collapse: collapse;
@@ -106,8 +115,8 @@
     {% endblock %}
     {% block scripts %}
     {{ bootstrap.load_js() }}
+    <script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.8/dist/inputmask.min.js"></script>
     {% endblock %}
-
     </div>
 </body>
 

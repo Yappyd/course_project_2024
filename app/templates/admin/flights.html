@@ -59,7 +59,21 @@
                 <td>{{ flight[3] }}</td>
                 <td>{{ flight[4] }}</td>
                 <td>{{ flight[5] }}</td>
-                <td>{{ flight[6] }}</td>
+                {%if flight[6] == 0 %}
+                <td>Запланирован</td>
+                {% endif %}
+                {% if flight[6] == 1 %}
+                <td>В полете</td>
+                {% endif %}
+                {% if flight[6] == 2 %}
+                <td>Перенесен</td>
+                {% endif %}
+                {% if flight[6] == 3 %}
+                <td>Отменен</td>
+                {% endif %}
+                {% if flight[6] == 4 %}
+                <td>Выполнен</td>
+                {% endif %}
                 {%if flight[7] != 0 %}
                 <td>{{ flight[7] }}</td>
                 {% endif %}

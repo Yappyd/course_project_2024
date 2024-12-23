@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Номер рейса</th>
+                    <th>Самолет</th>
+                    <th>Место вылета</th>
+                    <th>Место прилета</th>
+                    <th>Дата и время вылета</th>
+                    <th>Дата и время прилета</th>
+                    <th>Статус рейса</th>
+                    <th>Нужна виза?</th>
+                    <th>Класс</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ booking[0] }}</td>
+                    <td>{{ booking[2] }} <br>({{ booking[1] }})</td>
+                    <td>{{ booking[3] }} <br>{{ booking[4] }} <br>({{ booking[5] }})</td>
+                    <td>{{ booking[6] }} <br>{{ booking[7] }} <br>({{ booking[8] }})</td>
+                    <td>{{ booking[9] }}</td>
+                    <td>{{ booking[10] }}</td>
+                    {%if booking[14] == 0 %}
+                    <td>Запланирован</td>
+                    {% endif %}
+                    {% if booking[14] == 1 %}
+                    <td>В полете</td>
+                    {% endif %}
+                    {% if booking[14] == 2 %}
+                    <td>Перенесен</td>
+                    {% endif %}
+                    {% if booking[14] == 3 %}
+                    <td>Отменен</td>
+                    {% endif %}
+                    {% if booking[14] == 4 %}
+                    <td>Выполнен</td>
+                    {% endif %}
+                    {% if booking[11] %}
+                    <td>Да</td>
+                    {% else %}
+                    <td>Нет</td>
+                    {% endif %}
+                    {%if booking[12] == 0 %}
+                    <td>Эконом</td>
+                    {% endif %}
+                    {% if booking[12] == 1 %}
+                    <td>Бизнес</td>
+                    {% endif %}
+                    {% if booking[12] == 2 %}
+                    <td>Первый</td>
+                    {% endif %}
+                    {% if booking[13] %}
+                    <td>Оплачено</td>
+                    {% else %}
+                    <td>Не оплачено</td>
+                    {% endif %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% if srok %}
+    <p>Бронь просрочена</p>
+    {% else %}
+    {% if time %}
+    <p>Рейс уже прошел</p>
+    {% else %}
+    {% if not booking[13] %}
+    {{ render_field(form.pay) }}
+    {% endif %}
+    {% if places[0] !=0 or places[1] != 0 or places[2] != 0 %}
+    <h6>Изменить класс</h6>
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    {% if places[0] !=0 %}
+                    <th>Эконом класс</th>
+                    {% endif %}
+                    {% if places[1] !=0 %}
+                    <th>Бизнес класс</th>
+                    {% endif %}
+                    {% if places[2] !=0 %}
+                    <th>Первый класс</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {% if places[0] !=0 %}
+                    <td>{{ booking[15] }}</td>
+                    {% endif %}
+                    {% if places[1] !=0 %}
+                    <td>{{ booking[16] }}</td>
+                    {% endif %}
+                    {% if places[2] !=0 %}
+                    <td>{{ booking[17] }}</td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    {% if places[0] != 0 %}
+                    <td>
+                        <input type="radio" name="place_choice" value=0 checked>
+                    </td>
+                    {% endif %}
+                    {% if places[1] != 0 %}
+                    <td>
+                        <input type="radio" name="place_choice" value=1 checked>
+                    </td>
+                    {% endif %}
+                    {% if places[2] != 0 %}
+                    <td>
+                        <input type="radio" name="place_choice" value=2 checked>
+                    </td>
+                    {% endif %}
+                </tr>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {{ render_field(form.change_class) }}
+    {% endif %}
+    {% endif %}
+    {% endif %}
+    {{ render_field(form.delete) }}
+</form>
+{% endblock %}
