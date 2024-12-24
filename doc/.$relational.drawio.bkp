@@ -1,14 +1,14 @@
-<mxfile host="Electron" modified="2024-12-24T00:29:54.421Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/23.1.5 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="EtgM3AtLS2mvBpWGLzfS" version="23.1.5" type="device">
+<mxfile host="Electron" modified="2024-12-12T13:13:55.324Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/23.1.5 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="QtE5AJ0_bTYIiTJv4zvZ" version="23.1.5" type="device">
   <diagram name="Страница — 1" id="aswApnebIfe0iJgHI-J2">
-    <mxGraphModel dx="2642" dy="570" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2976" dy="683" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="WnEDCc8O035DGGUsU203-1" value="&lt;b&gt;Пользователь&lt;/b&gt;" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-730" y="482" width="110" height="208" as="geometry" />
+          <mxGeometry x="-730" y="482" width="110" height="178" as="geometry" />
         </mxCell>
-        <mxCell id="WnEDCc8O035DGGUsU203-2" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;* ID&lt;/b&gt;&lt;br&gt;Логин&lt;br&gt;Пароль&lt;br&gt;Фамилия&lt;br&gt;Имя&lt;br&gt;Отчество&lt;br&gt;Дата рождения&lt;br&gt;Почта&lt;br&gt;Телефон&lt;br&gt;Счёт&lt;br&gt;&lt;/font&gt;" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;" parent="WnEDCc8O035DGGUsU203-1" vertex="1">
-          <mxGeometry y="30" width="110" height="178" as="geometry" />
+        <mxCell id="WnEDCc8O035DGGUsU203-2" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;* Логин&lt;br&gt;&lt;/b&gt;Пароль&lt;br&gt;Фамилия&lt;br&gt;Имя&lt;br&gt;Отчество&lt;br&gt;Дата рождения&lt;br&gt;Почта&lt;br&gt;Телефон&lt;/font&gt;" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;" parent="WnEDCc8O035DGGUsU203-1" vertex="1">
+          <mxGeometry y="30" width="110" height="148" as="geometry" />
         </mxCell>
         <mxCell id="WnEDCc8O035DGGUsU203-3" value="&lt;b&gt;Модель самолета&lt;/b&gt;" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-1090" y="240" width="230" height="130" as="geometry" />
@@ -53,10 +53,10 @@
           <mxGeometry y="30" width="120" height="74" as="geometry" />
         </mxCell>
         <mxCell id="WnEDCc8O035DGGUsU203-29" value="&lt;b&gt;Администратор&lt;/b&gt;" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-990" y="482" width="130" height="98" as="geometry" />
+          <mxGeometry x="-990" y="482" width="130" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="WnEDCc8O035DGGUsU203-30" value="&lt;div style=&quot;font-size: 15px;&quot;&gt;&lt;b style=&quot;background-color: initial; font-size: 14px;&quot;&gt;* ID&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 15px;&quot;&gt;&lt;span style=&quot;background-color: initial; font-size: 14px;&quot;&gt;Логин&lt;/span&gt;&lt;/div&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Пароль&lt;/span&gt;&lt;/div&gt;&lt;/font&gt;" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;" parent="WnEDCc8O035DGGUsU203-29" vertex="1">
-          <mxGeometry y="30" width="130" height="68" as="geometry" />
+        <mxCell id="WnEDCc8O035DGGUsU203-30" value="&lt;div style=&quot;font-size: 15px;&quot;&gt;&lt;b style=&quot;background-color: initial; font-size: 14px;&quot;&gt;* Логин&lt;/b&gt;&lt;/div&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Пароль&lt;/span&gt;&lt;/div&gt;&lt;/font&gt;" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;" parent="WnEDCc8O035DGGUsU203-29" vertex="1">
+          <mxGeometry y="30" width="130" height="50" as="geometry" />
         </mxCell>
         <mxCell id="WnEDCc8O035DGGUsU203-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="WnEDCc8O035DGGUsU203-10" target="WnEDCc8O035DGGUsU203-8" edge="1">
           <mxGeometry relative="1" as="geometry">

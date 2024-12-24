@@ -13,20 +13,8 @@ from wtforms.validators import InputRequired, Optional
 @app.route('/', methods=['GET', 'POST'])
 def index():
     get_flights_form = flight_search()
-    get_flights_second = None
-    with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
-        cur = con.cursor()
-        airports = cur.execute('SELECT code, city FROM public.airport').fetchall()
-        get_flights_form.departure.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
-        get_flights_form.arrival.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
-    if not get_flights_form.ret_ticket.data:
-        get_flights_form.second_date.validators = [Optional()]
-    else:
-        get_flights_form.second_date.validators = [InputRequired()]
-    if get_flights_form.submit.data and get_flights_form.validate_on_submit():
-        with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
-            cur = con.cursor()
-            query = '''
+
+    query = '''
             SELECT 
                 f."number", 
                 f."plane number",
@@ -88,6 +76,19 @@ def index():
                 ) {sort}
             '''
 
+    with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+        cur = con.cursor()
+        airports = cur.execute('SELECT code, city FROM public.airport').fetchall()
+        get_flights_form.departure.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
+        get_flights_form.arrival.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
+    if not get_flights_form.ret_ticket.data:
+        get_flights_form.second_date.validators = [Optional()]
+    else:
+        get_flights_form.second_date.validators = [InputRequired()]
+    if get_flights_form.submit.data and get_flights_form.validate_on_submit():
+        with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+            cur = con.cursor()
+
             if get_flights_form.choice.data == 'up':
                 query = query.format(sort = 'ASC')
             else:
@@ -105,7 +106,11 @@ def index():
         if not current_user.is_authenticated:
             flash('Забронировать билет на рейс могут только авторизованные пользователи', 'warning')
             return redirect(url_for('login'))
-        if get_flights_form.ret_ticket.data and not (get_flights_second is None or len(get_flights_second) == 0):
+        with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+            cur = con.cursor()
+            query = query.format(sort = 'ASC')
+            get_flights_second = cur.execute(query,(get_flights_form.arrival.data, get_flights_form.departure.data, get_flights_form.second_date.data, current_user.id)).fetchall()
+        if get_flights_form.ret_ticket.data and get_flights_second and len(get_flights_second) > 0:
             return redirect(url_for('confimBook', firstFlight = request.form.get('flight_choice'), ret = True, secondFlight = request.form.get('second_flight_choice')))
         else:
             return redirect(url_for('confimBook', firstFlight = request.form.get('flight_choice'), ret = False, secondFlight = "0"))
@@ -754,19 +759,36 @@ def accountChange():
     if accountChange_form.submit.data:
         accountChange_form.phone.data = re.sub(r'[()\s-]', '', accountChange_form.phone.data)
     if accountChange_form.validate_on_submit():
+
+        if accountChange_form.email.data:
+            email = accountChange_form.email.data
+        else:
+            email = None
+
+        if accountChange_form.phone.data:
+            phone = accountChange_form.phone.data
+        else:
+            phone = None
+        
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             res = cur.execute('SELECT * FROM public."user" WHERE login = %s and id != %s', (accountChange_form.login.data,current_user.id)).fetchone()
+            cur_email = cur.execute('SELECT * FROM public."user" WHERE email = %s and id != %s', (accountChange_form.email.data,current_user.id)).fetchone()
+            cur_phone = cur.execute('SELECT * FROM public."user" WHERE phone = %s and id != %s', (accountChange_form.phone.data,current_user.id)).fetchone()
         if res:
             flash ('Данный логин уже занят', 'danger')
+        elif cur_email:
+            flash ('Данный email уже занят', 'danger')
+        elif cur_phone:
+            flash ('Данный телефон уже занят', 'danger')
         elif accountChange_form.password.data or accountChange_form.confirm.data:
             password = generate_password_hash(accountChange_form.password.data)
             try:
                 with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
                     cur = con.cursor()
                     res = cur.execute('UPDATE "user" SET "login" = %s, "password" = %s,   "birthdate" = %s, "surname" = %s, "name" = %s, "patronymic" = %s, "email" = %s, "phone" = %s WHERE "id" = %s'
-                                      , (accountChange_form.login.data, password, accountChange_form.birthdate.data, accountChange_form.surname.data, accountChange_form.name.data, accountChange_form.patronymic.data, accountChange_form.email.data, accountChange_form.phone.data, current_user.id))
-                flash('Данные успешно обновлены')
+                                      , (accountChange_form.login.data, password, accountChange_form.birthdate.data, accountChange_form.surname.data, accountChange_form.name.data, accountChange_form.patronymic.data, email, phone, current_user.id))
+                flash('Данные успешно обновлены', 'danger')
             except Exception:
                 flash('Не удалось обновить данные', 'danger')
         else:
@@ -774,7 +796,7 @@ def accountChange():
                 with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
                     cur = con.cursor()
                     res = cur.execute('UPDATE "user" SET "login" = %s,   "birthdate" = %s, "surname" = %s, "name" = %s, "patronymic" = %s, "email" = %s, "phone" = %s WHERE "id" = %s'
-                                      , (accountChange_form.login.data, accountChange_form.birthdate.data, accountChange_form.surname.data, accountChange_form.name.data, accountChange_form.patronymic.data, accountChange_form.email.data, accountChange_form.phone.data, current_user.id))
+                                      , (accountChange_form.login.data, accountChange_form.birthdate.data, accountChange_form.surname.data, accountChange_form.name.data, accountChange_form.patronymic.data, email, phone, current_user.id))
                 flash('Данные успешно обновлены', 'success')
             except Exception:
                 flash('Не удалось обновить данные', 'danger')
@@ -940,7 +962,7 @@ def changeBooking(flight):
                 price = get_booking[16]
             else:
                 price = get_booking[17]
-            if get_money[0] < changeBooking_form.pay.data:
+            if get_money[0] < get_booking[15+get_booking[12]]:
                 flash('Недостаточно средств на счете!', 'danger')
             else:
                 try:

@@ -54,7 +54,7 @@ class adminModels(FlaskForm):
     name = StringField('Название модели', render_kw={"autocomplete": "off"}, validators=[Optional()])
     economy = IntegerField('Эконом класс', default=0, render_kw={"autocomplete": "off"}, validators=[Optional(), NumberRange(min=0)])
     buisness = IntegerField('Бизнес класс', default=0, render_kw={"autocomplete": "off"}, validators=[Optional(), NumberRange(min=0)])
-    first = IntegerField('Первый 1.Kла$', default=0, render_kw={"autocomplete": "off"}, validators=[Optional(), NumberRange(min=0)])
+    first = IntegerField('Первый класс', default=0, render_kw={"autocomplete": "off"}, validators=[Optional(), NumberRange(min=0)])
     add = SubmitField('Добавить')
     delete = SubmitField('Удалить')
     show_models = SubmitField('Показать модели')
