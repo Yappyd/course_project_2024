@@ -75,20 +75,22 @@ def index():
                     CASE WHEN f."first price" > 0 THEN f."first price" ELSE NULL END
                 ) {sort}
             '''
-
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
+        # Получение данных об аэропортах
         airports = cur.execute('SELECT code, city FROM public.airport').fetchall()
         get_flights_form.departure.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
         get_flights_form.arrival.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in airports]
+        # Если убрана галочка, второе поле с датой не обязательно
     if not get_flights_form.ret_ticket.data:
         get_flights_form.second_date.validators = [Optional()]
     else:
         get_flights_form.second_date.validators = [InputRequired()]
+    # Поиск рейсов
     if get_flights_form.submit.data and get_flights_form.validate_on_submit():
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
-
+            # Сортировка
             if get_flights_form.choice.data == 'up':
                 query = query.format(sort = 'ASC')
             else:
@@ -97,11 +99,13 @@ def index():
                 id = current_user.id
             else:
                 id = -1
+            # Получение рейсов
             get_flights_first = cur.execute(query,(get_flights_form.departure.data, get_flights_form.arrival.data, get_flights_form.date.data, id)).fetchall()
             if get_flights_form.ret_ticket.data:
                 get_flights_second = cur.execute(query,(get_flights_form.arrival.data, get_flights_form.departure.data, get_flights_form.second_date.data, id)).fetchall()
                 return render_template('index.html', title='Главная', form = get_flights_form, search_bool = True, flights = get_flights_first, second_flights = get_flights_second, ret = get_flights_form.ret_ticket.data)
         return render_template('index.html', title='Главная', form = get_flights_form, search_bool = True, flights = get_flights_first, ret = get_flights_form.ret_ticket.data)
+    # Бронирование
     if get_flights_form.book.data:
         if not current_user.is_authenticated:
             flash('Забронировать билет на рейс могут только авторизованные пользователи', 'warning')
@@ -110,19 +114,23 @@ def index():
             cur = con.cursor()
             query = query.format(sort = 'ASC')
             get_flights_second = cur.execute(query,(get_flights_form.arrival.data, get_flights_form.departure.data, get_flights_form.second_date.data, current_user.id)).fetchall()
+        # Если есть обратные рейсы
         if get_flights_form.ret_ticket.data and get_flights_second and len(get_flights_second) > 0:
             return redirect(url_for('confimBook', firstFlight = request.form.get('flight_choice'), ret = True, secondFlight = request.form.get('second_flight_choice')))
         else:
+            # Если нет обратных рейсов
             return redirect(url_for('confimBook', firstFlight = request.form.get('flight_choice'), ret = False, secondFlight = "0"))
     return render_template('index.html', title='Главная', form = get_flights_form, search_bool = False, ret = False)
 
 # Авторизация админа
 @app.route('/admin/login', methods=['GET', 'POST'])
 def adminLogin():
+    # Запрет доступа авторизованным пользователям
     if current_user.is_authenticated:
         abort(403)
     login_form = loginForm()
     if login_form.validate_on_submit():
+        # Получение информации из базы
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             res = cur.execute('SELECT id, username, password '
@@ -131,6 +139,7 @@ def adminLogin():
         if res is None or not check_password_hash(res[2], login_form.password.data):
             flash('Попытка входа неудачна', 'danger')
             return redirect(url_for('adminLogin'))
+        # Запоминание пользователя в сессии
         id, username, password = res
         user = User(id, username, password, 0)
         login_user(user, remember=login_form.remember_me.data)
@@ -142,6 +151,7 @@ def adminLogin():
 @login_required
 @app.route('/logout')
 def logout():
+    # Запрет доступа неавторизованным польователям
     if not current_user.is_authenticated:
         abort(403)
     logout_user()
@@ -151,8 +161,10 @@ def logout():
 @login_required
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
+    # Перенаправления при нажатиях на кнопки
     interface = adminInterface()
     if interface.models.data:
         return redirect(url_for('models'))
@@ -172,6 +184,7 @@ def admin():
 @login_required
 @app.route('/admin/models', methods=['GET', 'POST'])
 def models():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     model_form = adminModels()
@@ -225,6 +238,7 @@ def models():
 @login_required
 @app.route('/admin/planes', methods=['GET', 'POST'])
 def planes():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     plane_form = adminPlanes()
@@ -281,6 +295,7 @@ def planes():
 @login_required
 @app.route('/admin/countries', methods=['GET', 'POST'])
 def countries():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     country_form = adminСountries()
@@ -331,6 +346,7 @@ def countries():
 @login_required
 @app.route('/admin/cities', methods=['GET', 'POST'])
 def cities():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     city_form = adminСities()
@@ -384,6 +400,7 @@ def cities():
 # Добавление аэропортов в базу
 @app.route('/admin/airports', methods=['GET', 'POST'])
 def airports():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     airport_form = adminAirports()
@@ -444,6 +461,7 @@ def airports():
 @login_required
 @app.route('/admin/flights', methods=['GET', 'POST'])
 def flights():
+    # Доступ только для админов
     if not current_user.is_authenticated or current_user.role != 0:
         abort(403)
     flight_form = adminFlights()
@@ -546,8 +564,6 @@ def flights():
                             else:
                                 travel_delta = timedelta(hours=flight_form.travel_time.data.hour, minutes=flight_form.travel_time.data.minute)
                                 arrival_datetime = departure_datetime+travel_delta
-                                # cur.execute('INSERT INTO  public."flight" VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                                #         (flight_form.number.data,flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,0,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data))
                                 try:
                                     cur.execute('INSERT INTO  public."flight" VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)',
                                         (flight_form.number.data,flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,0,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data))
@@ -628,8 +644,6 @@ def flights():
                             if try_bool:
                                 travel_delta = timedelta(hours=flight_form.travel_time.data.hour, minutes=flight_form.travel_time.data.minute)
                                 arrival_datetime = departure_datetime+travel_delta
-                                # cur.execute('INSERT INTO  public."flight" VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                                #         (flight_form.number.data,flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,0,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data))
                                 try:
                                     cur.execute('UPDATE "flight" SET "plane number" = %s, "departure" = %s, "arrival" = %s, "departure datetime" = %s, "arrival datetime" = %s, "status" = %s, "economy price" = %s, "business price" = %s, "first price" = %s WHERE "number" = %s',
                                         (flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,flight_form.status.data,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data, flight_form.number.data))
@@ -641,15 +655,11 @@ def flights():
 # Регистрация
 @app.route('/registration', methods=['GET', 'POST'])
 def registration():
+    # Запрет доступа авторизованным пользователям
     if current_user.is_authenticated:
         abort(403)
     registration_form = registrationForm()
     if registration_form.validate_on_submit():
-    #     if registration_form.password.data != registration_form.confirm.data:
-    #         flash ('Пароли не совпадают!', 'danger')
-    #     elif registration_form.birthdate.data > date.today()-relativedelta(years=12):
-    #         flash ('Зарегистрироваться могут только пользователи старше 12 лет!', 'danger')
-    #     else:
             with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
                 cur = con.cursor()
                 user = cur.execute('SELECT * FROM public."user" WHERE "login" = %s', (registration_form.login.data,)).fetchone()
@@ -668,6 +678,7 @@ def registration():
 # Авторизация пользователя
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Запрет доступа авторизованным пользователям
     if current_user.is_authenticated:
         abort(403)
     login_form = loginForm()
@@ -690,6 +701,9 @@ def login():
 # Личный кабинет
 @app.route('/account', methods=['GET', 'POST'])
 def account():
+    # Доступ только для авторизованных пользователей
+    if not current_user.is_authenticated or current_user.role != 1:
+        abort(403)
     account_form=accountForm()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
@@ -718,13 +732,13 @@ def account():
             '''
         get_bookings = cur.execute(query, (current_user.id,)).fetchall()
 
-    if not current_user.is_authenticated or current_user.role != 1:
-        abort(403)
+    # Получение данных из базы
     if request.method == 'GET':
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             res = cur.execute('SELECT money FROM public."user" WHERE id = %s', (current_user.id,)).fetchone()
             account_form.money.data = res[0]
+    # Пополнение счета
     if account_form.change_money.data:
         try:
             with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
@@ -733,8 +747,10 @@ def account():
             flash('Счет успешно изменен', 'success')
         except Exception:
             flash('Не удалось изменить счет', 'danger')
+    # Переход к изменению данных
     if account_form.change_data.data:
         return redirect(url_for('accountChange'))
+    # Переход к конкретному бронированию
     if account_form.change_booking.data:
         return redirect(url_for('changeBooking', flight = request.form.get('booking_choice')))
     return render_template('user/account.html', title=f'Личный кабинет пользователя {current_user.username}', form=account_form, bookings = get_bookings)
@@ -743,8 +759,10 @@ def account():
 @app.route('/account/change', methods=['GET', 'POST'])
 def accountChange():
     accountChange_form=accountChangeForm()
+    # Доступ только для авторизованных пользователей
     if not current_user.is_authenticated or current_user.role != 1:
         abort(403)
+    # Получение данных из базы
     if request.method == 'GET':
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
@@ -756,6 +774,7 @@ def accountChange():
             accountChange_form.patronymic.data = res[5]
             accountChange_form.email.data = res[6]
             accountChange_form.phone.data = res[7]
+    # Изменить данные
     if accountChange_form.submit.data:
         accountChange_form.phone.data = re.sub(r'[()\s-]', '', accountChange_form.phone.data)
     if accountChange_form.validate_on_submit():
@@ -770,6 +789,7 @@ def accountChange():
         else:
             phone = None
         
+        # Проверка полей на уникальность
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             res = cur.execute('SELECT * FROM public."user" WHERE login = %s and id != %s', (accountChange_form.login.data,current_user.id)).fetchone()
@@ -783,6 +803,7 @@ def accountChange():
             flash ('Данный телефон уже занят', 'danger')
         elif accountChange_form.password.data or accountChange_form.confirm.data:
             password = generate_password_hash(accountChange_form.password.data)
+        # Изменение информации в базе
             try:
                 with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
                     cur = con.cursor()
@@ -805,10 +826,12 @@ def accountChange():
 # Подтверждение брони
 @app.route('/confimBook/<firstFlight>/<ret>/<secondFlight>', methods=['GET', 'POST'])
 def confimBook(firstFlight, ret, secondFlight):
+    # Доступ только для авторизованных пользователей
     if not current_user.is_authenticated or current_user.role != 1:
         abort(403)
     booking_form=confimBooking()
 
+    # Изменение счета
     if booking_form.change_money.data:
         try:
             with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
@@ -849,13 +872,14 @@ def confimBook(firstFlight, ret, secondFlight):
             res_second = cur.execute(query,(secondFlight,)).fetchone()
         else:
             res_second = 0
-    
+    # Обязательная оплата
     message = False
     if res_first[9] < datetime.now() + timedelta(days=7):
         booking_form.pay.data = True
         booking_form.pay.render_kw = {'disabled': 'disabled'}
         message = True
 
+    # Подтверждение брони
     if booking_form.submit.data:
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
@@ -863,6 +887,7 @@ def confimBook(firstFlight, ret, secondFlight):
             first_choice = request.form.get('first_choice')
             if ret == 'True':
                 second_choice = request.form.get('second_choice')
+            # Если выбрана оплата сразу
             if booking_form.pay.data:
                 first_index = 11 + int(first_choice)
                 pay_count = res_first[first_index]
@@ -893,8 +918,10 @@ def confimBook(firstFlight, ret, secondFlight):
 
     return render_template('user/confim_booking.html', title='Подтверждение брони', form=booking_form, first = res_first, ret_bool = ret, second = res_second, mes = message)
 
+# Изменение брони
 @app.route('/account/changeBooking/<flight>', methods=['GET', 'POST'])
 def changeBooking(flight):
+    # Доступ только для авторизованных пользователей
     if not current_user.is_authenticated or current_user.role != 1:
         abort(403)
     changeBooking_form=changeBookingForm()
@@ -944,15 +971,19 @@ def changeBooking(flight):
         GROUP BY f."number", m."economy class", m."business class", m."first class"
         '''
 
+        # Получение данных из базы
         get_booking = cur.execute(query, (current_user.id, flight)).fetchone()
         get_places = cur.execute(second_query, (flight,)).fetchone()
         get_money = cur.execute('SELECT money FROM public."user" WHERE id = %s', (current_user.id,)).fetchone()
+    # Если бронь просрочена
     if (get_booking[9] < datetime.now() + timedelta(days=7)) and not get_booking[13]:
         prosrochka = True
 
+    # Если рейс выполнен
     if get_booking[9] < datetime.now():
         vremia = True
 
+    # Оплата
     if changeBooking_form.pay.data:
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
@@ -972,6 +1003,7 @@ def changeBooking(flight):
                     flash('Оплата прошла успешно', 'success')
                 except Exception:
                     flash('Не удалось оплатить', 'danger')
+    # Изменение класса
     if changeBooking_form.change_class.data:
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
@@ -982,31 +1014,26 @@ def changeBooking(flight):
                 except Exception:
                     flash('Не удалось изменить класс билета', 'danger')
             else:
+                # Пересчёт при оплаченном билете
                 get_money = cur.execute('SELECT money FROM public."user" WHERE id = %s', (current_user.id,)).fetchone()
                 price = get_booking[15+int(request.form.get('place_choice'))] - get_booking[15+get_booking[12]]
                 if get_money[0] < price:
                     flash('Недостаточно средств на счете!', 'danger')
-                    flash(get_money[0])
-                    flash(price)
-                    flash(get_booking[15+get_booking[12]])
-                    flash(get_booking[15+int(request.form.get('place_choice'))])
                 else:
                     try:
-                        flash(get_money[0])
-                        flash(price)
-                        flash(get_booking[15+get_booking[12]])
-                        flash(get_booking[15+int(request.form.get('place_choice'))])
                         cur.execute('UPDATE public."booking" SET "type" = %s WHERE "passenger" = %s AND "flight" = %s', (request.form.get('place_choice'), current_user.id, flight))
                         cur.execute('UPDATE public."user" SET money = %s WHERE id = %s', (get_money[0]-price,current_user.id))
                         flash('Класс билета успешно изменен', 'success')
                     except Exception:
                         flash('Не удалось изменить класс билета', 'danger')
+    # Удаление брони
     if changeBooking_form.delete.data:
         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
             cur = con.cursor()
             try:
                 cur.execute('Delete FROM public."booking" WHERE "passenger" = %s AND "flight" = %s', (current_user.id, flight))    
                 if get_booking[13]:
+                    # Возврат средств
                     if (get_booking[9] < datetime.now() + timedelta(days=7)):
                         cur.execute('UPDATE public."user" SET money = %s WHERE id = %s', (get_money[0]+int((get_booking[15+get_booking[12]])/2),current_user.id))
                         flash('50% суммы возвращены', 'success')
