@@ -457,7 +457,7 @@ def airports():
                     flash('Такого аэропорта нет!', 'danger')
     return render_template('admin/airports.html', title='Редактирование аэропортов в базе', form=airport_form, search_bool = False)
 
-# Добавление рейсов
+# Рейсы админа
 @login_required
 @app.route('/admin/flights', methods=['GET', 'POST'])
 def flights():
@@ -467,44 +467,78 @@ def flights():
     flight_form = adminFlights()
     with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
         cur = con.cursor()
+
+        number = '%'
+        plane = '%'
+        departure = '%'
+        arrival = '%'
+        date_departure = '%'
+        status = '%'
+
+        if flight_form.number.data and flight_form.number.data != '-1':
+            number = flight_form.number.data
+        if flight_form.plane.data and flight_form.plane.data!='-1':
+            plane=flight_form.plane.data
+        if flight_form.departure.data and flight_form.departure.data!='-1':
+            departure=flight_form.departure.data
+        if flight_form.arrival.data and flight_form.arrival.data!='-1':
+            arrival=flight_form.arrival.data
+        if flight_form.date.data:
+            date_departure = flight_form.date.data.strftime('%Y-%m-%d')
+        if flight_form.status.data and flight_form.status.data!='-1':
+            status=flight_form.status.data
+
+        flight_form.number.choices = [(-1, 'Выберите рейс')] 
+        flight_form.plane.choices = [(-1, 'Выберите самолет')] 
+        flight_form.departure.choices = [(-1, 'Выберите аэропорт вылета')]
+        flight_form.arrival.choices = [(-1, 'Выберите аэропорт прилета')]
+
+        res = (cur.execute('SELECT * FROM public."flight"')).fetchall()
+        flight_form.number.choices += [(ress[0], ress[0]) for ress in res]
+        res = (cur.execute('SELECT * FROM public."plane"')).fetchall()
+        flight_form.plane.choices += [(ress[1], ress[1]) for ress in res]
+        res = cur.execute('SELECT code, city FROM public.airport').fetchall()
+        flight_form.departure.choices += [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
+        flight_form.arrival.choices += [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
+
+        # Удалить рейс
+        delete_btn = request.form.get('flight_delete')
+        if delete_btn:
+            try:
+                cur.execute('DELETE FROM public."flight" WHERE number = %s', (delete_btn,))
+                flash('Рейс успешно удален', 'success')
+            except Exception:
+                flash('Невозможно удалить рейс', 'danger')
+                con.rollback()
+
+        # Изменить рейс
+        change_btn = request.form.get('flight_change')
+        if change_btn:
+            return redirect(url_for('change_flights', flight = change_btn))
+
+        res = (cur.execute('SELECT * FROM public."flight" WHERE "number" LIKE %s AND "plane number" LIKE %s AND "departure" LIKE %s AND "arrival" LIKE %s AND TO_CHAR("departure datetime", \'YYYY-MM-DD\') LIKE %s AND TO_CHAR("status", \'FM999999999\') LIKE %s'
+                        , (number,plane,departure,arrival,date_departure,status))).fetchall()
+    if flight_form.add.data:
+        return redirect(url_for('add_flights'))
+    return render_template('admin/flights.html', title='Редактирование рейсов', form=flight_form, flights = res, search_bool = True, today=date.today())
+
+# Добавление рейсов
+@login_required
+@app.route('/admin/flights/add', methods=['GET', 'POST'])
+def add_flights():
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
+    flight_form = add_adminFlights()
+    if flight_form.back.data:
+        return redirect(url_for('flights'))
+    with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+        cur = con.cursor()
         res = (cur.execute('SELECT model, number FROM public."plane"')).fetchall()
         flight_form.plane.choices = [(plane[1], f"{plane[1]} ({plane[0]})") for plane in res]
         res = cur.execute('SELECT code, city FROM public.airport').fetchall()
         flight_form.departure.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
         flight_form.arrival.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
-    # Показать все рейсы
-    if flight_form.show_flights.data:
-        with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
-            cur = con.cursor()
-            number = '%'
-            plane = '%'
-            departure = '%'
-            arrival = '%'
-            date_departure = '%'
-            status = '%'
-            # Фильтры
-            if flight_form.check_number.data:
-                if flight_form.number.data: 
-                    number = flight_form.number.data
-                else:
-                    flash('Номер рейса пустой, фильтр игнорируется', 'warning')
-            if flight_form.check_plane.data:
-                plane=flight_form.plane.data
-            if flight_form.check_departure.data:
-                departure=flight_form.departure.data
-            if flight_form.check_arrival.data:
-                arrival=flight_form.arrival.data
-            if flight_form.check_date.data:
-                if flight_form.date.data:
-                    date_departure = flight_form.date.data.strftime('%Y-%m-%d')
-                else:
-                    flash('Дата пустая, фильтр игнорируется', 'warning')
-            if flight_form.check_status.data:
-                status=flight_form.status.data
-            res = (cur.execute('SELECT * FROM public."flight" WHERE "number" LIKE %s AND "plane number" LIKE %s AND "departure" LIKE %s AND "arrival" LIKE %s AND TO_CHAR("departure datetime", \'YYYY-MM-DD\') LIKE %s AND TO_CHAR("status", \'FM999999999\') LIKE %s'
-                               , (number,plane,departure,arrival,date_departure,status))).fetchall()
-        return render_template('admin/flights.html', title='Редактирование рейсов', form=flight_form, flights = res, search_bool = True)
-    # Добавить рейс
+
     if flight_form.add.data:
         if not flight_form.number.data:
             flash('Номер не может быть пустым!', 'danger')
@@ -568,28 +602,22 @@ def flights():
                                     cur.execute('INSERT INTO  public."flight" VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)',
                                         (flight_form.number.data,flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,0,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data))
                                     flash('Рейс успешно добавлен', 'success')
+                                    return redirect(url_for('flights'))
                                 except Exception:
                                     flash('Невозможно добавить рейс', 'danger')
-    # Удалить рейс
-    if flight_form.delete.data:
-        if not flight_form.number.data:
-            flash('Номер не может быть пустым!', 'danger')
-        elif not re.fullmatch(r"^OBL\d{4}$",flight_form.number.data):
-            flash('Номер должен соответсвовать шаблону OBL####, где # - цифра!', 'danger')
-        else:
-            with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
-                cur = con.cursor()
-                res = cur.execute('SELECT * FROM public."flight" WHERE number = %s', (flight_form.number.data,)).fetchone()
-                if not res:
-                    flash('Рейса с таким номером не существует!', 'danger')
-                else:
-                    try:
-                        cur.execute('DELETE FROM public."flight" WHERE number = %s', (flight_form.number.data,))
-                        flash('Рейс успешно удален', 'success')
-                    except Exception:
-                        flash('Невозможно удалить рейс', 'danger')
-                        con.rollback()
-    # Изменить рейс
+    return render_template('admin/add_flights.html', title='Добавление рейсов', form=flight_form)
+
+
+# Изменение рейсов
+@login_required
+@app.route('/admin/flights/chnage/<flight>', methods=['GET', 'POST'])
+def change_flights(flight):
+    if not current_user.is_authenticated or current_user.role != 0:
+        abort(403)
+    flight_form = change_adminFlights()
+    if flight_form.back.data:
+        return redirect(url_for('flights'))
+
     if flight_form.change.data:
         if not flight_form.number.data:
             flash('Номер не может быть пустым!', 'danger')
@@ -650,7 +678,36 @@ def flights():
                                     flash('Рейс успешно изменен', 'success')
                                 except Exception:
                                     flash('Невозможно изменить рейс', 'danger')
-    return render_template('admin/flights.html', title='Редактирование рейсов', form=flight_form, search_bool = False)
+
+    with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+        cur = con.cursor()
+
+        res = (cur.execute('SELECT model, number FROM public."plane"')).fetchall()
+        flight_form.plane.choices = [(plane[1], f"{plane[1]} ({plane[0]})") for plane in res]
+        res = cur.execute('SELECT code, city FROM public.airport').fetchall()
+        flight_form.departure.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
+        flight_form.arrival.choices = [(airport[0], f"{airport[1]} ({airport[0]})") for airport in res]
+
+        current_flight = cur.execute('SELECT * FROM public."flight" WHERE "number" = %s', (flight,)).fetchone()
+        flight_form.number.data = current_flight[0]
+        flight_form.plane.data = current_flight[1]
+        flight_form.departure.data = current_flight[2]
+        flight_form.arrival.data = current_flight[3]
+        flight_form.date.data = (current_flight[4]).date()
+        flight_form.time.data = (current_flight[4]).time()
+
+        time_diff = current_flight[5] - current_flight[4]
+        hours = (time_diff.seconds // 3600)
+        minutes = (time_diff.seconds % 3600) // 60
+        time_diff_as_time = time(hours, minutes)
+        flight_form.travel_time.data = time_diff_as_time
+
+        flight_form.economy.data = current_flight[7]
+        flight_form.buisness.data = current_flight[8]
+        flight_form.first.data = current_flight[9]
+
+    return render_template('admin/change_flights.html', title='Изменение рейсов', form=flight_form)
+
 
 # Регистрация
 @app.route('/registration', methods=['GET', 'POST'])
@@ -1045,3 +1102,185 @@ def changeBooking(flight):
             except Exception:
                 flash('Не удалось удалить бронь', 'danger')
     return render_template('user/changeBooking.html', title='Информация о брони', form=changeBooking_form, booking = get_booking, srok = prosrochka, time = vremia, places = get_places)
+
+
+
+
+
+# Добавить рейс
+    # if flight_form.add.data:
+    #     if not flight_form.number.data:
+    #         flash('Номер не может быть пустым!', 'danger')
+    #     elif not flight_form.date.data:
+    #         flash('Дата не модет быть пустой!', 'danger')
+    #     elif flight_form.date.data <= date.today():
+    #         flash('Дата не может быть меньше или равна сегодняшней!', 'danger')
+    #     elif not flight_form.time.data:
+    #         flash('Время вылета не может быть пустым!', 'danger')
+    #     elif not flight_form.travel_time.data:
+    #         flash('Время в пути не может быть пустым!', 'danger')
+    #     elif flight_form.time.data == time(0, 0):
+    #         flash('Время в пути не может быть 00:00!', 'danger')
+    #     else:
+    #         departure_datetime = datetime.combine(flight_form.date.data, flight_form.time.data)
+    #         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+    #             cur = con.cursor()
+    #             airports = cur.execute('SELECT city FROM public."airport" WHERE code = %s OR code = %s', (flight_form.departure.data,flight_form.arrival.data)).fetchall()
+    #             if not re.fullmatch(r"^OBL\d{4}$",flight_form.number.data):
+    #                 flash('Номер должен соответсвовать шаблону OBL####, где # - цифра!', 'danger')
+    #             elif len(airports) < 2 or airports[0][0] == airports[1][0]:
+    #                 flash('Города вылета и прибытия должны различаться!', 'danger')
+    #             else:
+    #                 try_bool = True
+    #                 datetimes = cur.execute('SELECT "departure datetime", "arrival datetime" FROM public."flight" WHERE "plane number" = %s', (flight_form.plane.data,)).fetchall()
+    #                 for departure, arrival  in datetimes:
+    #                     if departure <= departure_datetime <= arrival:
+    #                         flash ('Самолет в это время уже занят!', 'danger')
+    #                         try_bool = False
+    #                         break
+    #                 if try_bool:
+                        
+    #                     try_bool = True
+    #                     plases = cur.execute('SELECT pm."economy class",pm."business class",pm."first class" FROM "plane" p JOIN public."plane model" pm ON p."model" = pm."name" WHERE p."number" = %s', (flight_form.plane.data,)).fetchone()
+    #                     if plases[0] > 0 and flight_form.economy.data == 0:
+    #                         flash ('Не указана цена за место эконом класса!', 'danger')
+    #                         try_bool = False
+    #                     if plases[1] > 0 and flight_form.buisness.data == 0:
+    #                         flash ('Не указана цена за место бизнесс класса!', 'danger')
+    #                         try_bool = False
+    #                     if plases[2] > 0 and flight_form.first.data == 0:
+    #                         flash ('Не указана цена за место первого класса!', 'danger')
+    #                         try_bool = False
+    #                     if plases[0] == 0 and flight_form.economy.data > 0:
+    #                         flash ('Указана цена за место эконом класса, которого нет в модели!', 'danger')
+    #                         try_bool = False
+    #                     if plases[1] == 0 and flight_form.buisness.data > 0:
+    #                         flash ('Указана цена за место бизнесс класса, которого нет в модели!', 'danger')
+    #                         try_bool = False
+    #                     if plases[2] == 0 and flight_form.first.data > 0:
+    #                         flash ('Указана цена за место первого класса, которого нет в модели!', 'danger')
+    #                         try_bool = False
+    #                     if try_bool:
+    #                         number = (cur.execute('SELECT * FROM public."flight" WHERE number = %s', (flight_form.number.data,))).fetchall()
+    #                         if number:
+    #                             flash ('Рейс с таким номером уже есть!', 'danger')
+    #                         else:
+    #                             travel_delta = timedelta(hours=flight_form.travel_time.data.hour, minutes=flight_form.travel_time.data.minute)
+    #                             arrival_datetime = departure_datetime+travel_delta
+    #                             try:
+    #                                 cur.execute('INSERT INTO  public."flight" VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)',
+    #                                     (flight_form.number.data,flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,0,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data))
+    #                                 flash('Рейс успешно добавлен', 'success')
+    #                             except Exception:
+    #                                 flash('Невозможно добавить рейс', 'danger')
+
+
+    # # Изменить рейс
+    # if flight_form.change.data:
+    #     if not flight_form.number.data:
+    #         flash('Номер не может быть пустым!', 'danger')
+    #     elif not flight_form.date.data:
+    #         flash('Дата не модет быть пустой!', 'danger')
+    #     elif flight_form.date.data <= date.today():
+    #         flash('Дата не может быть меньше или равна сегодняшней!', 'danger')
+    #     elif not flight_form.time.data:
+    #         flash('Время вылета не может быть пустым!', 'danger')
+    #     elif not flight_form.travel_time.data:
+    #         flash('Время в пути не может быть пустым!', 'danger')
+    #     elif flight_form.time.data == time(0, 0):
+    #         flash('Время в пути не может быть 00:00!', 'danger')
+    #     else:
+    #         departure_datetime = datetime.combine(flight_form.date.data, flight_form.time.data)
+    #         with psycopg.connect(host=app.config['DB_SERVER'], user=app.config['DB_USER'], password=app.config['DB_PASSWORD'], dbname=app.config['DB_NAME']) as con:
+    #             cur = con.cursor()
+    #             airports = cur.execute('SELECT city FROM public."airport" WHERE code = %s OR code = %s', (flight_form.departure.data,flight_form.arrival.data)).fetchall()
+    #             if not re.fullmatch(r"^OBL\d{4}$",flight_form.number.data):
+    #                 flash('Номер должен соответсвовать шаблону OBL####, где # - цифра!', 'danger')
+    #             elif len(airports) < 2 or airports[0][0] == airports[1][0]:
+    #                 flash('Города вылета и прибытия должны различаться!', 'danger')
+    #             else:
+    #                 number = cur.execute('SELECT * FROM public."flight" WHERE number = %s', (flight_form.number.data,)).fetchone()
+    #                 if not number:
+    #                     flash ('Рейс с таким номером не существует!', 'danger')
+    #                 elif number[5] < datetime.combine(date.today(), datetime.min.time()):
+    #                     flash ('Нельзя менять данные прошедших рейсов!', 'danger')
+    #                 else:
+    #                     try_bool = True
+    #                     datetimes = cur.execute('SELECT "departure datetime", "arrival datetime", "number" FROM public."flight" WHERE "plane number" = %s', (flight_form.plane.data,)).fetchall()
+    #                     for departure, arrival, number  in datetimes:
+    #                         if number == flight_form.number.data:
+    #                             continue
+    #                         if departure <= departure_datetime <= arrival:
+    #                             flash ('Самолет в это время уже занят!', 'danger')
+    #                             try_bool = False
+    #                             break
+    #                     if try_bool:
+                        
+    #                         try_bool = True
+    #                         plases = cur.execute('SELECT pm."economy class",pm."business class",pm."first class" FROM "plane" p JOIN public."plane model" pm ON p."model" = pm."name" WHERE p."number" = %s', (flight_form.plane.data,)).fetchone()
+    #                         if plases[0] > 0 and flight_form.economy.data == 0:
+    #                             flash ('Не указана цена за место эконом класса!', 'danger')
+    #                             try_bool = False
+    #                         if plases[1] > 0 and flight_form.buisness.data == 0:
+    #                             flash ('Не указана цена за место бизнесс класса!', 'danger')
+    #                             try_bool = False
+    #                         if plases[2] > 0 and flight_form.first.data == 0:
+    #                             flash ('Не указана цена за место первого класса!', 'danger')
+    #                             try_bool = False
+    #                         if try_bool:
+    #                             travel_delta = timedelta(hours=flight_form.travel_time.data.hour, minutes=flight_form.travel_time.data.minute)
+    #                             arrival_datetime = departure_datetime+travel_delta
+    #                             try:
+    #                                 cur.execute('UPDATE "flight" SET "plane number" = %s, "departure" = %s, "arrival" = %s, "departure datetime" = %s, "arrival datetime" = %s, "status" = %s, "economy price" = %s, "business price" = %s, "first price" = %s WHERE "number" = %s',
+    #                                     (flight_form.plane.data,flight_form.departure.data,flight_form.arrival.data,departure_datetime, arrival_datetime,flight_form.status.data,flight_form.economy.data,flight_form.buisness.data,flight_form.first.data, flight_form.number.data))
+    #                                 flash('Рейс успешно изменен', 'success')
+    #                             except Exception:
+    #                                 flash('Невозможно изменить рейс', 'danger')
+
+
+            # # Фильтры
+        # if flight_form.check_number.data:
+        #     if flight_form.number.data: 
+        #         number = flight_form.number.data
+        #     else:
+        #         flash('Номер рейса пустой, фильтр игнорируется', 'warning')
+        # if flight_form.check_plane.data:
+        #     plane=flight_form.plane.data
+        # if flight_form.check_departure.data:
+        #     departure=flight_form.departure.data
+        # if flight_form.check_arrival.data:
+        #     arrival=flight_form.arrival.data
+        # if flight_form.check_date.data:
+        #     if flight_form.date.data:
+        #         date_departure = flight_form.date.data.strftime('%Y-%m-%d')
+        #     else:
+        #         flash('Дата пустая, фильтр игнорируется', 'warning')
+        # if flight_form.check_status.data:
+        #     status=flight_form.status.data
+
+
+
+
+                # number = '%'
+        # plane = '%'
+        # departure = '%'
+        # arrival = '%'
+        # date_departure = '%'
+        # status = '%'
+
+        # if flight_form.number.data:
+        #     number = flight_form.number.data
+        # if flight_form.plane.data:
+        #     plane=flight_form.plane.data
+        # if flight_form.departure.data:
+        #     departure=flight_form.departure.data
+        # if flight_form.arrival.data:
+        #     arrival=flight_form.arrival.data
+        # if flight_form.date.data:
+        #     if flight_form.date.data:
+        #         date_departure = flight_form.date.data.strftime('%Y-%m-%d')
+        # if flight_form.status.data:
+        #     status=flight_form.status.data
+
+        # res = (cur.execute('SELECT * FROM public."flight" WHERE "number" LIKE %s AND "plane number" LIKE %s AND "departure" LIKE %s AND "arrival" LIKE %s AND TO_CHAR("departure datetime", \'YYYY-MM-DD\') LIKE %s AND TO_CHAR("status", \'FM999999999\') LIKE %s'
+        #                     , (number,plane,departure,arrival,date_departure,status))).fetchall()
