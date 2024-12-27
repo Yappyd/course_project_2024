@@ -2,7 +2,7 @@
 
 
 {% block content %}
-<form method="POST">
+<form method="POST" action="/admin/flights">
     <h2>{{ title }}</h2>
     {{ form.hidden_tag() }}
     <div style="padding-top: 10px; padding-bottom: 10px;">
@@ -13,24 +13,9 @@
     {{ render_field(form.departure) }}
     {{ render_field(form.arrival) }}
     {{ render_field(form.date) }}
-    {{ render_field(form.time) }}
-    {{ render_field(form.travel_time) }}
     {{ render_field(form.status) }}
-    {{ render_field(form.economy) }}
-    {{ render_field(form.buisness) }}
-    {{ render_field(form.first) }}
     {{ render_field(form.add) }}
-    {{ render_field(form.delete) }}
-    {{ render_field(form.change) }}
-    {{ render_field(form.check_number) }}
-    {{ render_field(form.check_plane) }}
-    {{ render_field(form.check_departure) }}
-    {{ render_field(form.check_arrival) }}
-    {{ render_field(form.check_date) }}
-    {{ render_field(form.check_status) }}
-
     {{ render_field(form.show_flights) }}
-    {{ render_field(form.hide_flights) }}
     {%if search_bool%}
     {% if flights|length == 0 %}
     <p>Рейсов не найдено.</p>
@@ -48,6 +33,8 @@
                 <th>Цена эконом класса</th>
                 <th>Цена бизнесс класса</th>
                 <th>Цена первого класса</th>
+                <th>Удалить</th>
+                <th>Изменить</th>
             </tr>
         </thead>
         <tbody>
@@ -76,12 +63,24 @@
                 {% endif %}
                 {%if flight[7] != 0 %}
                 <td>{{ flight[7] }}</td>
+                {% else %}
+                <td>Мест нет</td>
                 {% endif %}
                 {%if flight[8] != 0 %}
                 <td>{{ flight[8] }}</td>
+                {% else %}
+                <td>Мест нет</td>
                 {% endif %}
                 {%if flight[9] != 0 %}
                 <td>{{ flight[9] }}</td>
+                {% else %}
+                <td>Мест нет</td>
+                {% endif %}
+                <td> <button type="submit" name="flight_delete" value="{{ flight[0] }}" class="btn btn-danger">Удалить</button> </td>
+                {%if today > flight[4].date()%}
+                <td>Невозможно изменить</td>
+                {% else %}
+                <td> <button type="submit" name="flight_change" value="{{ flight[0] }}" class="btn btn-warning">Изменить</button> </td>
                 {% endif %}
             </tr>
             {% endfor %}

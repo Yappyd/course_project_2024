@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<form method="POST">
+    <h2>{{ title }}</h2>
+    {{ form.hidden_tag() }}
+    <div style="padding-top: 10px; padding-bottom: 10px;">
+        {{ render_messages() }}
+
+    {{ render_field(form.number) }}
+    {{ render_field(form.plane) }}
+    {{ render_field(form.departure) }}
+    {{ render_field(form.arrival) }}
+    {{ render_field(form.date) }}
+    {{ render_field(form.time) }}
+    {{ render_field(form.travel_time) }}
+    {{ render_field(form.status) }}
+    {{ render_field(form.economy) }}
+    {{ render_field(form.buisness) }}
+    {{ render_field(form.first) }}
+    {{ render_field(form.change) }}
+    {{ render_field(form.back) }}
+</form>
+{% endblock %}
+{% block messages %}{% endblock %}
